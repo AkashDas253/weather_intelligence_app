@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weather Dashboard & Saved Locations</title>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card-bg: #ffffff;
+      --border: #e4e7ee;
+      --text: #1f2430;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --danger: #dc2626;
+      --danger-hover: #b91c1c;
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      max-width: 720px;
+      margin: 48px auto;
+      padding: 0 20px;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-top: 24px;
+      box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+    }
+
+    label {
+      display: block;
+      margin-top: 16px;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+    }
+    label:first-child { margin-top: 0; }
+
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 10px 12px;
+      margin-top: 6px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.15s ease;
+    }
+    input[type="text"]:focus, input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    button {
+      margin-top: 18px;
+      padding: 10px 18px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.15s ease;
+    }
+    button:hover { background: var(--accent-hover); }
+    button:active { transform: translateY(1px); }
+
+    .result-box {
+      margin-top: 16px;
+      white-space: pre-wrap;
+      background: #f8fafc;
+      padding: 12px 14px;
+      border-radius: 8px;
+      min-height: 20px;
+      font-size: 13px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .result-box:empty { display: none; }
+
+    table {
+      width: 100%;
+      margin-top: 0;
+      border-collapse: collapse;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    th {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      font-weight: 600;
+    }
+    tbody tr:hover { background: #fafbfe; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .empty-row td {
+      color: var(--muted);
+      text-align: center;
+      padding: 20px 8px;
+    }
+
+    .delete-btn {
+      margin-top: 0;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+    .delete-btn:hover { background: var(--danger); color: #fff; }
+    .delete-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .search-item {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .search-item:last-child { border-bottom: none; }
+    .search-headline { font-weight: 600; color: var(--text); font-size: 14px; }
+    .search-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .search-text { font-size: 13px; margin-top: 6px; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <h1>Weather Locations Dashboard</h1>
+  <p class="hint">Save city locations to monitor live temperature and conditions, or run semantic vector searches over weather documents.</p>
+
+  <!-- Card 1: Add Saved Location -->
+  <div class="card">
+    <form id="location-form">
+      <label for="location">Location Name</label>
+      <input type="text" id="location" name="location" placeholder="e.g. New York, London, Tokyo" required>
+      <button type="submit">Add Location</button>
+    </form>
+
+    <div id="result" class="result-box"></div>
+  </div>
+
+  <!-- Card 2: Saved Locations Table -->
+  <div class="card">
+    <table id="locations-table">
+      <thead>
+        <tr>
+          <th>Location</th>
+          <th>Email</th>
+          <th>Temp</th>
+          <th>Condition</th>
+          <th>Updated</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="locations-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Card 3: Vector Semantic Search -->
+  <div class="card">
+    <h3 style="font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 4px;">Semantic Weather Search</h3>
+    <p class="hint" style="margin-bottom: 12px;">Query weather documents using pgvector similarity search.</p>
+    <form id="search-form">
+      <label for="query">Search Query</label>
+      <input type="text" id="query" name="query" placeholder="e.g. risk of flooding near rivers" required>
+      <button type="submit">Search Weather Documents</button>
+    </form>
+
+    <div id="search-results" style="margin-top: 16px;"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("location-form");
+    const resultEl = document.getElementById("result");
+    const locationsBody = document.getElementById("locations-body");
+
+    const searchForm = document.getElementById("search-form");
+    const searchResults = document.getElementById("search-results");
+
+    async function loadLocations() {
+      try {
+        const resp = await fetch("/locations");
+        const data = await resp.json();
+        if (!resp.ok) {
+          resultEl.textContent = "Error loading saved locations: " + (data.error || resp.statusText);
+          return;
+        }
+        locationsBody.innerHTML = "";
+
+        if (!data.length) {
+          const emptyTr = document.createElement("tr");
+          emptyTr.className = "empty-row";
+          emptyTr.innerHTML = `<td colspan="6">No saved locations yet. Add a location above to get started.</td>`;
+          locationsBody.appendChild(emptyTr);
+          return;
+        }
+
+        data.forEach((row) => {
+          const tr = document.createElement("tr");
+          const temp = row.latest_temp !== null && row.latest_temp !== undefined
+            ? Number(row.latest_temp).toFixed(1) + "°"
+            : "-";
+          const condition = row.condition || "-";
+          const updated = row.updated_at ? new Date(row.updated_at).toLocaleString() : "-";
+
+          tr.innerHTML = `
+            <td><strong>${row.location}</strong></td>
+            <td>${row.email || "-"}</td>
+            <td>${temp}</td>
+            <td>${condition}</td>
+            <td>${updated}</td>
+            <td><button type="button" class="delete-btn" data-location="${row.location}">Remove</button></td>
+          `;
+          locationsBody.appendChild(tr);
+        });
+      } catch (err) {
+        resultEl.textContent = "Failed to load locations: " + err;
+      }
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const location = document.getElementById("location").value;
+      resultEl.textContent = "Fetching weather & saving location...";
+
+      try {
+        const resp = await fetch("/locations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ location }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          resultEl.textContent = "Error: " + (data.error || resp.statusText);
+          return;
+        }
+        resultEl.textContent = "Added " + data.location + " (" + (data.latest_temp ?? "-") + "°, " + (data.condition ?? "N/A") + ")";
+        document.getElementById("location").value = "";
+        loadLocations();
+      } catch (err) {
+        resultEl.textContent = "Request failed: " + err;
+      }
+    });
+
+    locationsBody.addEventListener("click", async (e) => {
+      const btn = e.target.closest(".delete-btn");
+      if (!btn) return;
+
+      const location = btn.dataset.location;
+      btn.disabled = true;
+      resultEl.textContent = "Removing " + location + "...";
+
+      try {
+        const resp = await fetch(`/locations/${encodeURIComponent(location)}`, {
+          method: "DELETE",
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          resultEl.textContent = "Error: " + (data.error || resp.statusText);
+          btn.disabled = false;
+          return;
+        }
+        resultEl.textContent = "Removed " + data.location + " from your saved locations.";
+        loadLocations();
+      } catch (err) {
+        resultEl.textContent = "Request failed: " + err;
+        btn.disabled = false;
+      }
+    });
+
+    searchForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const query = document.getElementById("query").value;
+      searchResults.innerHTML = "<p class='hint'>Searching weather documents...</p>";
+
+      try {
+        const resp = await fetch("/weather/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query, top_k: 5 }),
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          searchResults.innerHTML = `<p class="hint" style="color:var(--danger)">Search error: ${data.error || resp.statusText}</p>`;
+          return;
+        }
+
+        if (!data.length) {
+          searchResults.innerHTML = "<p class='hint'>No matching weather documents found.</p>";
+          return;
+        }
+
+        searchResults.innerHTML = "";
+        data.forEach((item) => {
+          const simPct = (item.similarity * 100).toFixed(1);
+          const div = document.createElement("div");
+          div.className = "search-item";
+          div.innerHTML = `
+            <div class="search-headline">${item.headline || "Weather Notice"}</div>
+            <div class="search-meta">Location: ${item.location || "N/A"} | Similarity: ${simPct}%</div>
+            <div class="search-text">${item.chunk_text || ""}</div>
+          `;
+          searchResults.appendChild(div);
+        });
+      } catch (err) {
+        searchResults.innerHTML = `<p class="hint" style="color:var(--danger)">Request failed: ${err}</p>`;
+      }
+    });
+
+    loadLocations();
+  </script>
+</body>
+</html>

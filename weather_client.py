@@ -12,7 +12,7 @@ import re
 from typing import Any
 
 import psycopg2
-from psycopg2.extras import execute_values, Json
+from psycopg2.extras import Json, execute_values
 import requests
 
 _NWS_BASE_URL = os.environ.get("NWS_API_BASE_URL", "https://api.weather.gov")
@@ -85,7 +85,7 @@ class WeatherClient:
         return data.get("properties", {}).get("periods", [])
 
     def normalize_alert(self, alert: dict, location_name: str) -> dict | None:
-        """Normalize an alert feature into a weather_documents record dict."""
+        """Normalize an alert feature into a weather.weather_documents record dict."""
         props = alert.get("properties", {})
         alert_id = alert.get("id") or props.get("id")
         if not alert_id:
@@ -110,7 +110,7 @@ class WeatherClient:
         }
 
     def normalize_forecast(self, period: dict, location_name: str) -> dict | None:
-        """Normalize a forecast period into a weather_documents record dict."""
+        """Normalize a forecast period into a weather.weather_documents record dict."""
         detailed = period.get("detailedForecast") or ""
         if not detailed:
             return None
