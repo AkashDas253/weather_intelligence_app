@@ -1,7 +1,17 @@
-databricks-sdk>=0.30.0
-databricks-sql-connector>=3.4.0
+# Web Framework & API
+Flask>=3.0.0
+requests>=2.31.0
+
+# Databricks & Database Connectivity
+databricks-sdk>=0.20.0
 psycopg2-binary>=2.9.9
 sqlalchemy>=2.0.30
-flask>=3.0.3
-requests>=2.32.3
+pgvector>=0.2.4
+
+# ML & Vector Embeddings
+sentence-transformers>=2.5.0
+
+# UI & Utilities
+streamlit>=1.38.0
+pandas>=2.2.0
 python-dotenv>=1.0.1

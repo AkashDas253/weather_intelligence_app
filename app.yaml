@@ -3,8 +3,30 @@ command:
   - "app.py"
 
 env:
+  # Lakebase Secret Configuration
   - name: LAKEBASE_SECRET_SCOPE
     value: "database"
   - name: LAKEBASE_SECRET_KEY
     value: "lakebase-url"
 
+  # Embedding Model Configuration
+  - name: EMBEDDING_MODEL_NAME
+    value: "sentence-transformers/all-MiniLM-L6-v2"
+
+  # Application Default Settings
+  - name: DEFAULT_CITIES
+    value: "New York, London, Tokyo, Paris, Sydney"
+
+  # Lakebase Schema & Table Names
+  - name: WEATHER_DOCUMENTS_TABLE_NAME
+    value: "weather.weather_documents"
+  - name: WEATHER_EMBEDDINGS_TABLE_NAME
+    value: "weather.weather_embeddings"
+  - name: LOCATIONS_TABLE_NAME
+    value: "weather.saved_locations"
+
+  # Server Network Configuration
+  - name: FLASK_RUN_HOST
+    value: "0.0.0.0"
+  - name: FLASK_RUN_PORT
+    value: "8000"
