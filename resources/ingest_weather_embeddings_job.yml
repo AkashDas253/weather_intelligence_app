@@ -1,23 +1,13 @@
-# Databricks Workflow that runs notebooks/ingest_ticker_news_embeddings.py on
-# a schedule. The notebook itself queries the `watchlist` table for tickers,
-# fetches news for those tickers directly from Massive (rate-limited to
-# max_requests_per_minute), and turns the resulting documents into vector
-# embeddings for the context-engineering course's RAG exercises.
-#
-# Deploy: databricks bundle deploy -t dev
-# Run once manually: databricks bundle run ingest_ticker_news_embeddings_job -t dev
-
 resources:
   jobs:
-    ingest_ticker_news_embeddings_job:
-      name: "[${bundle.target}] Ingest Ticker News Embeddings"
+    ingest_weather_embeddings_job:
+      name: "[${bundle.target}] Ingest Weather Embeddings"
 
-      # Runs daily at 6:00 AM UTC, after Massive news feeds have typically
-      # updated overnight. Adjust to match your class schedule.
+      # Runs daily at 6:00 AM UTC
       schedule:
         quartz_cron_expression: "0 0 6 * * ?"
         timezone_id: "UTC"
-        pause_status: PAUSED  # flip to UNPAUSED once you've validated a manual run
+        pause_status: PAUSED
 
       email_notifications:
         on_failure:
@@ -26,28 +16,33 @@ resources:
       max_concurrent_runs: 1
 
       job_clusters:
-        - job_cluster_key: default_cluster
+        - job_cluster_key: single_node_cluster
           new_cluster:
             spark_version: "15.4.x-scala2.12"
             node_type_id: "i3.xlarge"
-            num_workers: 2
+            num_workers: 0
+            spark_conf:
+              "spark.databricks.cluster.profile": "singleNode"
+              "spark.master": "local[*]"
+            custom_tags:
+              "ResourceClass": "SingleNode"
             data_security_mode: SINGLE_USER
 
       tasks:
-        - task_key: ingest_ticker_news_embeddings
-          job_cluster_key: default_cluster
+        - task_key: ingest_weather_embeddings
+          job_cluster_key: single_node_cluster
+          libraries:
+            - pypi:
+                package: "psycopg2-binary"
+            - pypi:
+                package: "sentence-transformers"
+            - pypi:
+                package: "pgvector"
           notebook_task:
-            notebook_path: ../notebooks/ingest_ticker_news_embeddings.py
+            notebook_path: ../notebooks/ingest_weather_embeddings.py
             base_parameters:
-              watchlist_table_name: "watchlist"
-              news_table_name: "ticker_news_documents"
-              embeddings_table_name: "ticker_news_embeddings"
-              chunk_embeddings_table_name: "ticker_news_chunk_embeddings"
+              documents_table_name: "weather.weather_documents"
+              chunk_embeddings_table_name: "weather.weather_embeddings"
               embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
-              massive_secret_scope: "massive"
-              massive_secret_key: "api-key"
-              massive_api_base_url: "https://api.massive.com"
-              news_fetch_limit: "50"
-              max_requests_per_minute: "5"
               chunk_size: "800"
               chunk_overlap: "100"
